@@ -38,6 +38,10 @@ save_data = {
   use_enhancer_bot: false,
   use_philo_neck: false,
   use_charm: false,
+  use_chance_cape: false,
+  chance_cape_refined: false,
+  use_shrine_tempo_buff: false,
+  use_shrine_scholar_buff: false,
   use_enhancing_buff: false,
   use_experience_buff: false,
   enchanted_level: 0,
@@ -47,14 +51,22 @@ save_data = {
   philo_neck_level: 0,
   charm_level: 0,
   charm_tier: "trainee",
+  chance_cape_level: 0,
+  
+  shrine_tempo_level: 0,
+  shrine_scholar_level: 0,
+
   enhancing_buff_level: 1,
   experience_buff_level: 1,
+  
+
 
   tea_enhancing: false,
   tea_super_enhancing: false,
   tea_ultra_enhancing: false,
   tea_blessed: false,
   tea_wisdom: false,
+  achievement_champion: false,
 
   selected_item: "",
   stop_at: 10,
@@ -179,20 +191,28 @@ function Enhancelate(save_data, sim_data)
     charmKey = "/items/" + save_data.charm_tier + "_enhancing_charm";
     baseCharmExperience = enhancable_items.find((a) => a.hrid == charmKey).equipmentDetail.noncombatStats.enhancingExperience;
     charmExperience = save_data.use_charm ? (baseCharmExperience == undefined ? 0.0 : baseCharmExperience * (((enhance_bonus[save_data.charm_level]-1)*5)+1)) : 0;
+    //chance cape (additive), 5x enhance scaling
+    capeRefinementKey = "/items/chance_cape" + (save_data.chance_cape_refined ? "_refined" : "");
+    baseCapeExperience = enhancable_items.find((a) => a.hrid == capeRefinementKey).equipmentDetail.noncombatStats.enhancingExperience;
+    capeExperience = save_data.use_chance_cape ? (baseCapeExperience == undefined ? 0.0 : baseCapeExperience * (((enhance_bonus[save_data.chance_cape_level]-1)*5)+1)) : 0;
+    // scholar shrine buff
+    scholar_buff_effect = save_data.use_shrine_scholar_buff ? save_data.shrine_scholar_level * 0.005 : 0;
     //community exp buff
-    exp_buff_effect = save_data.use_experience_buff ? 0.195+save_data.experience_buff_level*0.005 : 0
+    exp_buff_effect = save_data.use_experience_buff ? 0.195+save_data.experience_buff_level*0.005 : 0;
     //total exp bonus
     exp_bonus = (save_data.tea_wisdom ? 0.12*guzzling_bonus : 0.00) +
         (enhancingExperience == undefined ? 0.00 : enhancingExperience) +
         (enhancer_botExperience == undefined ? 0.00 : enhancer_botExperience) +
         (philo_neckExperience == undefined ? 0.00 : philo_neckExperience) +
+        (capeExperience == undefined ? 0.00 : capeExperience) +
+        (scholar_buff_effect == undefined ? 0.00 : scholar_buff_effect) +
         charmExperience +
         exp_buff_effect;
     return acc + (a * success_chances[i] + a * 0.1 * (1 - success_chances[i])) * (1 + exp_bonus) * (cal_exp(sim_data.item_level, i));
   }, 0);
   
   results = {};
-  results.actions = attempts
+  results.actions = attempts;
   results.exp = exp;
   results.protect_count = protects;
 
@@ -250,7 +270,7 @@ function get_full_item_price(hrid) {
   return final_cost;
 }
 
-//tims as seconds, return string "00h:00m:00s"
+//time as seconds, return string "00h:00m:00s"
 function formatTime(seconds) {
   // Calculate the number of hours, minutes, and seconds
   var hours = (Math.floor(seconds / 3600)).toString()
@@ -267,20 +287,23 @@ function update_values(recalculate = true) {
 	save_data.enhancer_level = Number($("#i_enhancer_level").val())
 	temp = enhancable_items.find((a) => a.hrid == key).equipmentDetail.noncombatStats.enhancingSuccess * 100 * enhance_bonus[save_data.enhancer_level]
 	enhancer_bonus = Number(temp)
+	
+  // Achievement bonus
+  achievement_bonus = save_data.achievement_champion ? 0.2 : 0;
 
   // Guzzling bonus
   temp = enhancable_items.find((a) => a.hrid == "/items/guzzling_pouch").equipmentDetail.noncombatStats.drinkConcentration * 100 * enhance_bonus[save_data.guzzling_level]
   guzzling_bonus = save_data.use_guzzling ? Number((1+temp/100)) : 1;
 
-  //Tea speed bonus
+  // Tea speed bonus
   tea_speed_bonus = save_data.tea_enhancing ? 2*guzzling_bonus : save_data.tea_super_enhancing ? 4*guzzling_bonus : save_data.tea_ultra_enhancing ? 6*guzzling_bonus : 0;
 
   // Total bonus
   effective_level = save_data.enhancing_level + (save_data.tea_enhancing ? 3*guzzling_bonus : 0) + (save_data.tea_super_enhancing ? 6*guzzling_bonus : 0) + (save_data.tea_ultra_enhancing ? 8*guzzling_bonus : 0);
 	if(effective_level >= sim_data.item_level)
-		sim_data.total_bonus = 1+(0.05*(effective_level + save_data.observatory_level - sim_data.item_level)+enhancer_bonus)/100
+		sim_data.total_bonus = 1+(0.05*(effective_level + save_data.observatory_level - sim_data.item_level) + enhancer_bonus + achievement_bonus)/100
 	else
-		sim_data.total_bonus = (1-(0.5*(1-(effective_level) / sim_data.item_level)))+((0.05*save_data.observatory_level)+enhancer_bonus)/100
+		sim_data.total_bonus = (1-(0.5*(1-(effective_level) / sim_data.item_level)))+((0.05*save_data.observatory_level) + enhancer_bonus + achievement_bonus)/100
   
   // Simulation
   save_data.emu_time = Number($("#i_emu_time").val());
@@ -289,17 +312,24 @@ function update_values(recalculate = true) {
 
   // Action time
   const calc_speed = function (item_hrid, level) {
-    if(item_hrid != "/items/philosophers_necklace")
-      result = enhancable_items.find((a) => a.hrid == item_hrid).equipmentDetail.noncombatStats.enhancingSpeed * 100 * enhance_bonus[level];
-    else
+    if(item_hrid == "/items/philosophers_necklace")
       result = enhancable_items.find((a) => a.hrid == item_hrid).equipmentDetail.noncombatStats.skillingSpeed * 100 * (((enhance_bonus[level]-1)*5)+1);
-    return Number(result.toFixed(2));
+    else if (
+    item_hrid == "/items/chance_cape" ||
+    item_hrid == "/items/chance_cape_refined")
+      result = enhancable_items.find((a) => a.hrid == item_hrid).equipmentDetail.noncombatStats.enhancingSpeed * 100 * (((enhance_bonus[level]-1)*5)+1);
+    else    
+      result = enhancable_items.find((a) => a.hrid == item_hrid).equipmentDetail.noncombatStats.enhancingSpeed * 100 * enhance_bonus[level];
+    return Number(result.toFixed(2)); // increase decimals for more accuracy?
   };
   item_bonus = (save_data.use_enchanted ? calc_speed("/items/enchanted_gloves", save_data.enchanted_level) : 0.0) + 
                (save_data.use_enhancer_top ? calc_speed("/items/enhancers_top", save_data.enhancer_top_level) : 0.0) +
                (save_data.use_enhancer_bot ? calc_speed("/items/enhancers_bottoms", save_data.enhancer_bot_level) : 0.0) +
                (save_data.use_philo_neck ? calc_speed("/items/philosophers_necklace", save_data.philo_neck_level) : 0.0) +
-               (save_data.use_enhancing_buff ?  19.5+(save_data.enhancing_buff_level*0.5): 0.0);
+               (save_data.use_chance_cape ? (save_data.chance_cape_refined ? calc_speed("/items/chance_cape_refined", save_data.chance_cape_level) 
+               : calc_speed("/items/chance_cape", save_data.chance_cape_level)) : 0.0) +
+               (save_data.use_shrine_tempo_buff ? save_data.shrine_tempo_level * 0.5 : 0.0) +
+               (save_data.use_enhancing_buff ?  19.5+(save_data.enhancing_buff_level*0.5) : 0.0);
 
 	temp = (12/(1+(save_data.enhancing_level>sim_data.item_level ? ((effective_level+save_data.observatory_level-sim_data.item_level)+item_bonus+tea_speed_bonus)/100 : (save_data.observatory_level+item_bonus+tea_speed_bonus)/100))).toFixed(2)
 	sim_data.attempt_time = Number(temp)
@@ -900,11 +930,20 @@ function init_user_data() {
     if(save_data.use_enhancer_bot == undefined) save_data.use_enhancer_bot = false;
     if(save_data.use_philo_neck == undefined) save_data.use_philo_neck = false;
     if(save_data.philo_neck_level == undefined) save_data.philo_neck_level = 0;
+    if(save_data.use_chance_cape == undefined) save_data.use_chance_cape = false;
+    if(save_data.chance_cape_level == undefined) save_data.chance_cape_level = 0;
+    if(save_data.use_shrine_tempo_buff == undefined) save_data.use_shrine_tempo_buff = false;
+    if(save_data.shrine_tempo_level == undefined) save_data.shrine_tempo_level = 0;
+    if(save_data.use_shrine_scholar_buff == undefined) save_data.use_shrine_scholar_buff = false;
+    if(save_data.shrine_scholar_level == undefined) save_data.shrine_scholar_level = 0;
     if(save_data.use_enhancing_buff == undefined) save_data.use_enhancing_buff = false;
     if(save_data.enhancing_buff_level == undefined) save_data.enhancing_buff_level = 0;
     if(save_data.use_experience_buff == undefined) save_data.use_experience_buff = false;
     if(save_data.experience_buff_level == undefined) save_data.experience_buff_level = 0;
+    if(save_data.tea_enhancing == undefined) save_data.tea_enhancing = false;
+    if(save_data.tea_super_enhancing == undefined) save_data.tea_super_enhancing = false;
     if(save_data.tea_ultra_enhancing == undefined) save_data.tea_ultra_enhancing = false;
+    if(save_data.achievement_champion == undefined) save_data.achievement_champion = false;
     if(save_data.observatory_level == undefined && save_data.laboratory_level != undefined) save_data.observatory_level = save_data.laboratory_level;
     if(save_data.hide_junk == undefined) save_data.hide_junk = false;
     if(save_data.hide_charms == undefined) save_data.hide_charms = false;
@@ -918,22 +957,28 @@ function init_user_data() {
     if(save_data.charm_tier == undefined) save_data.charm_tier = "trainee";
 
     // update the UI with the saved values
-		$("#i_enhancing_level").val(save_data.enhancing_level);
-		$("#i_observatory_level").val(save_data.observatory_level);
+	$("#i_enhancing_level").val(save_data.enhancing_level);
+	$("#i_observatory_level").val(save_data.observatory_level);
     $("#i_enhancer_level").val(save_data.enhancer_level);
-    $("#i_use_enchanted").prop("checked", save_data.use_enchanted)
-    $("#i_use_guzzling").prop("checked", save_data.use_guzzling)
-    $("#i_use_enhancer_top").prop("checked", save_data.use_enhancer_top)
-    $("#i_use_enhancer_bot").prop("checked", save_data.use_enhancer_bot)
-    $("#i_use_philo_neck").prop("checked", save_data.use_philo_neck)
-    $("#i_use_enhancing_buff").prop("checked", save_data.use_enhancing_buff)
-    $("#i_use_experience_buff").prop("checked", save_data.use_experience_buff)
-    $("#i_use_charm").prop("checked", save_data.use_charm)
-		$("#i_enchanted_level").val(save_data.enchanted_level);
+    $("#i_use_enchanted").prop("checked", save_data.use_enchanted);
+    $("#i_use_guzzling").prop("checked", save_data.use_guzzling);
+    $("#i_use_enhancer_top").prop("checked", save_data.use_enhancer_top);
+    $("#i_use_enhancer_bot").prop("checked", save_data.use_enhancer_bot);
+    $("#i_use_philo_neck").prop("checked", save_data.use_philo_neck);
+    $("#i_use_chance_cape").prop("checked", save_data.use_chance_cape);
+    $("#i_use_shrine_tempo").prop("checked", save_data.use_shrine_tempo_buff);
+    $("#i_use_shrine_scholar").prop("checked", save_data.use_shrine_scholar_buff);
+    $("#i_use_enhancing_buff").prop("checked", save_data.use_enhancing_buff);
+    $("#i_use_experience_buff").prop("checked", save_data.use_experience_buff);
+    $("#i_use_charm").prop("checked", save_data.use_charm);
+	$("#i_enchanted_level").val(save_data.enchanted_level);
     $("#i_guzzling_level").val(save_data.guzzling_level);
     $("#i_enhancer_top_level").val(save_data.enhancer_top_level);
     $("#i_enhancer_bot_level").val(save_data.enhancer_bot_level);
     $("#i_philo_neck_level").val(save_data.philo_neck_level);
+    $("#i_chance_cape_level").val(save_data.chance_cape_level);
+    $("#i_shrine_tempo_level").val(save_data.shrine_tempo_level);
+    $("#i_shrine_scholar_level").val(save_data.shrine_scholar_level);
     $("#i_charm_level").val(save_data.charm_level);
     $("#i_enhancing_buff_level").val(save_data.enhancing_buff_level);
     $("#i_experience_buff_level").val(save_data.experience_buff_level);
@@ -946,6 +991,7 @@ function init_user_data() {
     if(save_data.tea_ultra_enhancing) { $("#tea_ultra_enhancing").attr("class", "btn_icon_selected"); }
     if(save_data.tea_blessed)         { $("#tea_blessed").attr("class", "btn_icon_selected"); }
     if(save_data.tea_wisdom)          { $("#tea_wisdom").attr("class", "btn_icon_selected"); }
+    if(save_data.achievement_champion){ $("#achievement_champion").attr("class", "btn_icon_selected"); }
 
     $("#i_stop_at").val(save_data.stop_at);
 
@@ -962,7 +1008,7 @@ function init_user_data() {
   if(save_data.selected_item == null || save_data.selected_item == "")
   {
     save_data.selected_item = "/items/snake_fang_dirk";
-  }  
+  }
   change_item(save_data.selected_item.substring(7), save_data.selected_item);
 
   if($("#" + save_data.selected_enhancer) == null) { save_data.selected_enhancer = "btn_holy_enhancer"; }
@@ -977,6 +1023,14 @@ function init_user_data() {
   // Initialize charm grid visibility
   if(save_data.use_charm) { $("#charm_grid_row").css("display", "table-row"); }
   else { $("#charm_grid_row").css("display", "none"); }
+  
+  // Initialize chance cape selected button styling
+  if(save_data.chance_cape_refined) {$("#btn_cape_refined").attr("class", "btn_icon_selected cape_btn"); }
+  else { $("#btn_cape").attr("class", "btn_icon_selected cape_btn"); }
+
+  // Initialize chance cape grid visibility
+  if(save_data.use_chance_cape) { $("#cape_grid_row").css("display", "table-row"); }
+  else { $("#cape_grid_row").css("display", "none"); }
 }
 
 function enhancer_selection(element)
@@ -996,6 +1050,25 @@ function charm_selection(element)
   // ids: btn_charm_trainee/basic/advanced/expert/master/grandmaster
   const tier = id.replace("btn_charm_", "");
   save_data.charm_tier = tier;
+  update_values();
+}
+
+function cape_selection(element)
+{
+  if(element.id == "btn_cape")
+  {
+    element.className = "btn_icon_selected";
+    $("#btn_cape_refined").attr("class", "btn_icon");
+    save_data.chance_cape_refined = false;
+  }
+
+  if(element.id == "btn_cape_refined")
+  {
+    element.className = "btn_icon_selected";
+    $("#btn_cape").attr("class", "btn_icon");
+    save_data.chance_cape_refined = true;
+  }
+
   update_values();
 }
 
@@ -1019,6 +1092,25 @@ function tea_selection(element)
   reset_results();
 }
 
+function achievement_selection(element)
+{
+	if(element.className == "btn_icon")
+  {
+    element.className = "btn_icon_selected";
+    if(element.id == "achievement_champion") 
+    save_data[element.id] = true;
+    
+	}
+	else
+  {
+    element.className = "btn_icon";
+    save_data[element.id] = false;
+  }
+  
+  update_values();
+  reset_results();
+}
+    
 function protect_selection(element)
 {
   const index = Number(element.id.substring(5, 6));
@@ -1060,7 +1152,7 @@ $(document).ready(function() {
     $("#sel_item").append('<div id="'+key+'_list" value="'+key+'" data="'+item.hrid+'" class="sel_item_div"><svg><use xlink:href="#'+key+'"></svg></use></div>')
 	})
 
-	//generte ehancers items list
+	//generate enhancers items list
   let enhancers = enhancable_items.filter((a) => a.equipmentDetail.type == "/equipment_types/enhancing_tool");
 	enhancers.forEach(function(item) {
     key = item.hrid.substring(7); // remove "/items/"
@@ -1068,8 +1160,8 @@ $(document).ready(function() {
 	})
 
   $("#i_use_enchanted").on("input", function() {
-		save_data.use_enchanted = $("#i_use_enchanted").prop('checked')
-		update_values()
+	save_data.use_enchanted = $("#i_use_enchanted").prop('checked')
+	update_values()
   })
   $("#i_use_guzzling").on("input", function() {
     save_data.use_guzzling = $("#i_use_guzzling").prop('checked')
@@ -1085,6 +1177,24 @@ $(document).ready(function() {
   })
   $("#i_use_philo_neck").on("input", function() {
     save_data.use_philo_neck = $("#i_use_philo_neck").prop('checked')
+    update_values()
+  })
+  $("#i_use_chance_cape").on("input", function() {
+   save_data.use_chance_cape = $("#i_use_chance_cape").prop('checked')
+   if(save_data.use_chance_cape) { $("#cape_grid_row").css("display", "table-row"); }
+   else { $("#cape_grid_row").css("display", "none"); }
+   update_values()
+  })
+  $("#i_chance_cape_level").on("input", function() {
+    save_data.chance_cape_level = Number($("#i_chance_cape_level").val());
+    update_values()
+  })  
+  $("#i_use_shrine_tempo_buff").on("input", function() {
+    save_data.use_shrine_tempo_buff = $("#i_use_shrine_tempo_buff").prop('checked')
+    update_values()
+  })
+  $("#i_use_shrine_scholar_buff").on("input", function() {
+    save_data.use_shrine_scholar_buff = $("#i_use_shrine_scholar_buff").prop('checked')
     update_values()
   })
   $("#i_use_enhancing_buff").on("input", function() {

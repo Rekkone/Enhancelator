@@ -19,6 +19,15 @@
       y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
   })(window, document, "clarity", "script", "rapxvnegrc");
 </script>
+<style>
+	.enhance_columns input {
+        vertical-align: middle;
+	}
+	.enhance_columns td {
+        white-space: nowrap;
+	}
+</style>
+</style>
 </head>
 <body>
   <div id="overlay">
@@ -139,51 +148,65 @@
   </div>
 	<div id="enhance_area" class="enhance_area">
     <div class="input_block">
-      <div>
+	  <div class="enhance_columns" style="display: flex; align-items: flex-start; gap: 20px;">
         <table>
           <tr>
             <td><p>Skill Level</p></td>
-            <td></td>
-            <td align="right"><input id="i_enhancing_level" type="number" min="1" max="200" placeholder="100"></td>
+            <td align="right">
+				<input id="i_enhancing_level" type="number" min="1" max="200" placeholder="100">
+			</td>
           </tr>
           <tr>
             <td><p>Observatory Level</p></td>
-            <td></td>
-            <td align="right"><input id="i_observatory_level" type="number" min="0" max="8" placeholder="0"></td>
+            <td align="right">
+				<input id="i_observatory_level" type="number" min="0" max="8" placeholder="0">
+			</td>
           </tr>
-          <tr><td colspan="3"><div class="top_divider"></div></td></tr>
+          <tr><td colspan="2"><div class="top_divider"></div></td></tr>
           <tr>
             <td><p>Enchanted Gloves</p></td>
-            <td align="center"><input id="i_use_enchanted" type="checkbox" class="enhancer_stats_check_box"></td>
-            <td align="right"><input id="i_enchanted_level" type="number" min="0" max="20" placeholder="0"></td>
+            <td align="right">
+				<input id="i_use_enchanted" type="checkbox" class="enhancer_stats_check_box">
+				<input id="i_enchanted_level" type="number" min="0" max="20" placeholder="0">
+            </td>
           </tr>
           <tr>
             <td><p>Guzzling Pouch</p></td>
-            <td align="center"><input id="i_use_guzzling" type="checkbox" class="enhancer_stats_check_box"></td>
-            <td align="right"><input id="i_guzzling_level" type="number" min="0" max="20" placeholder="0"></td>
+            <td align="right">
+				<input id="i_use_guzzling" type="checkbox" class="enhancer_stats_check_box">
+				<input id="i_guzzling_level" type="number" min="0" max="20" placeholder="0">
+            </td>
           </tr>
           <tr>
             <td><p>Enhancer's Top</p></td>
-            <td align="center"><input id="i_use_enhancer_top" type="checkbox" class="enhancer_stats_check_box"></td>
-            <td align="right"><input id="i_enhancer_top_level" type="number" min="0" max="20" placeholder="0"></td>
+            <td align="right">
+				<input id="i_use_enhancer_top" type="checkbox" class="enhancer_stats_check_box">
+				<input id="i_enhancer_top_level" type="number" min="0" max="20" placeholder="0">
+            </td>
           </tr>
           <tr>
             <td><p>Enhancer's Bottoms</p></td>
-            <td align="center"><input id="i_use_enhancer_bot" type="checkbox" class="enhancer_stats_check_box"></td>
-            <td align="right"><input id="i_enhancer_bot_level" type="number" min="0" max="20" placeholder="0"></td>
+            <td align="right">
+				<input id="i_use_enhancer_bot" type="checkbox" class="enhancer_stats_check_box">
+				<input id="i_enhancer_bot_level" type="number" min="0" max="20" placeholder="0">
+            </td>
           </tr>
           <tr>
             <td><p>Philosopher's Necklace</p></td>
-            <td align="center"><input id="i_use_philo_neck" type="checkbox" class="enhancer_stats_check_box"></td>
-            <td align="right"><input id="i_philo_neck_level" type="number" min="0" max="20" placeholder="0"></td>
+            <td align="right">
+				<input id="i_use_philo_neck" type="checkbox" class="enhancer_stats_check_box">
+				<input id="i_philo_neck_level" type="number" min="0" max="20" placeholder="0">
+            </td>
           </tr>
           <tr>
             <td><p>Enhancing Charm</p></td>
-            <td align="center"><input id="i_use_charm" type="checkbox" class="enhancer_stats_check_box"></td>
-            <td align="right"><input id="i_charm_level" type="number" min="0" max="20" placeholder="0"></td>
+            <td align="right">
+				<input id="i_use_charm" type="checkbox" class="enhancer_stats_check_box">
+				<input id="i_charm_level" type="number" min="0" max="20" placeholder="0">
+			</td>
           </tr>
           <tr id="charm_grid_row" style="display: none;">
-            <td colspan="3">
+            <td colspan="2">
               <button id="btn_charm_trainee" class="btn_icon charm_btn" onclick="charm_selection(this)" title="Trainee Enhancing Charm">
                 <svg><use xlink:href="#trainee_enhancing_charm"></use></svg>
               </button>
@@ -204,25 +227,58 @@
               </button>
             </td>
           </tr>
-           <tr><td colspan="3"><div class="top_divider"></div></td></tr>
+          <tr>
+            <td><p>Chance Cape</p></td>
+            <td align="right">
+				<input id="i_use_chance_cape" type="checkbox" class="enhancer_stats_check_box">
+				<input id="i_chance_cape_level" type="number" min="0" max="20" placeholder="0">
+			</td>
+          </tr>
+          <tr id="cape_grid_row" style="display: none;">
+            <td colspan="2">
+              <button id="btn_cape" class="btn_icon cape_btn" onclick="cape_selection(this)" title="Chance Cape">
+                <svg><use xlink:href="#chance_cape"></use></svg>
+              </button>
+              <button id="btn_cape_refined" class="btn_icon cape_btn" onclick="cape_selection(this)" title="Chance Cape (R)">
+                <svg><use xlink:href="#chance_cape_refined"></use></svg>
+              </button>
+            </td>
+          </tr>
+        </table>
+        <table>
+          <tr>
+            <td><p>Tempo Shrine</p></td>
+            <td align="right">
+			<input id="i_use_shrine_tempo_buff" type="checkbox" class="enhancer_stats_check_box">
+            <input id="i_shrine_tempo_level" type="number" min="0" max="20" placeholder="1">
+            </td>
+          </tr>
+          <tr>
+            <td><p>Scholar Shrine</p></td>
+            <td align="right"><input id="i_use_shrine_scholar_buff" type="checkbox" class="enhancer_stats_check_box">
+            <input id="i_shrine_scholar_level" type="number" min="0" max="20" placeholder="1">
+            </td>
+          </tr>
+           <tr><td colspan="2"><div class="top_divider"></div></td></tr>
           <tr>
             <td><p>Enhancing buff</p></td>
-            <td align="center"><input id="i_use_enhancing_buff" type="checkbox" class="enhancer_stats_check_box"></td>
-            <td align="right"><input id="i_enhancing_buff_level" type="number" min="1" max="20" placeholder="1"></td>
+            <td align="right"><input id="i_use_enhancing_buff" type="checkbox" class="enhancer_stats_check_box">
+            <input id="i_enhancing_buff_level" type="number" min="1" max="20" placeholder="1">
+            </td>
           </tr>
           <tr>
             <td><p>Experience buff</p></td>
-            <td align="center"><input id="i_use_experience_buff" type="checkbox" class="enhancer_stats_check_box"></td>
-            <td align="right"><input id="i_experience_buff_level" type="number" min="1" max="20" placeholder="1"></td>
+            <td align="right"><input id="i_use_experience_buff" type="checkbox" class="enhancer_stats_check_box">
+            <input id="i_experience_buff_level" type="number" min="1" max="20" placeholder="1">
+            </td>
           </tr>
-          <tr><td colspan="3"><div class="top_divider"></div></td></tr>
+          <tr><td colspan="2"><div class="top_divider"></div></td></tr>
           <tr>
             <td><p>Enhancer Level</p></td>
-            <td></td>
             <td align="right"><input id="i_enhancer_level" type="number" min="0" max="20" placeholder="0"></td>
           </tr>
           <tr>
-            <td colspan="3">
+            <td colspan="2">
               <button id="btn_cheese_enhancer" class="btn_icon" onclick="enhancer_selection(this)">
                 <svg><use xlink:href="#cheese_enhancer"></use></svg>
               </button>
@@ -249,9 +305,9 @@
               </button>
             </td>
           </tr>
-          <tr><td colspan="3"><div class="top_divider"></div></td></tr>
+          <tr><td colspan="2"><div class="top_divider"></div></td></tr>
           <tr>
-            <td colspan="3">
+            <td colspan="2">
               <button id="tea_enhancing" class="btn_icon" style="width:48px; height:48px;" onclick="tea_selection(this)">
                 <svg><use xlink:href="#enhancing_tea"></use></svg>
               </button>
@@ -266,6 +322,9 @@
               </button>
               <button id="tea_wisdom" class="btn_icon" style="width:48px; height:48px;" onclick="tea_selection(this)">
                 <svg><use xlink:href="#wisdom_tea"></use></svg>
+              </button>
+              <button id="achievement_champion" class="btn_icon" style="width:48px; height:48px;" onclick="achievement_selection(this)">
+				<img src="achievements.svg">
               </button>
             </td>
           </tr>
