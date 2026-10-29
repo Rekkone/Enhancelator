@@ -66,13 +66,17 @@ save_data = {
   tea_ultra_enhancing: false,
   tea_blessed: false,
   tea_wisdom: false,
+  
   achievement_champion: false,
+  
+  scroll_speed: false,
+  scroll_wisdom: false,
 
   selected_item: "",
   stop_at: 10,
 
-  hourly_rate: 3000000,
-  percent_rate: 2,
+  hourly_rate: 0,
+  percent_rate: 0,
 
   // simulation
   emu_time: 32768,
@@ -197,8 +201,10 @@ function Enhancelate(save_data, sim_data)
     capeExperience = save_data.use_chance_cape ? (baseCapeExperience == undefined ? 0.0 : baseCapeExperience * (((enhance_bonus[save_data.chance_cape_level]-1)*5)+1)) : 0;
     // scholar shrine buff
     scholar_buff_effect = save_data.use_shrine_scholar_buff ? save_data.shrine_scholar_level * 0.005 : 0;
-    //community exp buff
-    exp_buff_effect = save_data.use_experience_buff ? 0.195+save_data.experience_buff_level*0.005 : 0;
+    // community exp buff
+    exp_buff_effect = save_data.use_experience_buff ? 0.195 + save_data.experience_buff_level * 0.005 : 0;
+    // scroll wisdom buff
+    scroll_wisdom_buff = save_data.scroll_wisdom ? 0.2 : 0;
     //total exp bonus
     exp_bonus = (save_data.tea_wisdom ? 0.12*guzzling_bonus : 0.00) +
         (enhancingExperience == undefined ? 0.00 : enhancingExperience) +
@@ -206,6 +212,7 @@ function Enhancelate(save_data, sim_data)
         (philo_neckExperience == undefined ? 0.00 : philo_neckExperience) +
         (capeExperience == undefined ? 0.00 : capeExperience) +
         (scholar_buff_effect == undefined ? 0.00 : scholar_buff_effect) +
+        (scroll_wisdom_buff == undefined ? 0.00 : scroll_wisdom_buff) +
         charmExperience +
         exp_buff_effect;
     return acc + (a * success_chances[i] + a * 0.1 * (1 - success_chances[i])) * (1 + exp_bonus) * (cal_exp(sim_data.item_level, i));
@@ -297,6 +304,9 @@ function update_values(recalculate = true) {
 
   // Tea speed bonus
   tea_speed_bonus = save_data.tea_enhancing ? 2*guzzling_bonus : save_data.tea_super_enhancing ? 4*guzzling_bonus : save_data.tea_ultra_enhancing ? 6*guzzling_bonus : 0;
+  
+  // Action Speed scroll bonus
+  scroll_speed_bonus = save_data.scroll_speed ? 15 : 0;
 
   // Total bonus
   effective_level = save_data.enhancing_level + (save_data.tea_enhancing ? 3*guzzling_bonus : 0) + (save_data.tea_super_enhancing ? 6*guzzling_bonus : 0) + (save_data.tea_ultra_enhancing ? 8*guzzling_bonus : 0);
@@ -329,6 +339,7 @@ function update_values(recalculate = true) {
                (save_data.use_chance_cape ? (save_data.chance_cape_refined ? calc_speed("/items/chance_cape_refined", save_data.chance_cape_level) 
                : calc_speed("/items/chance_cape", save_data.chance_cape_level)) : 0.0) +
                (save_data.use_shrine_tempo_buff ? save_data.shrine_tempo_level * 0.5 : 0.0) +
+               (save_data.scroll_speed ? scroll_speed_bonus : 0.0) +
                (save_data.use_enhancing_buff ?  19.5+(save_data.enhancing_buff_level*0.5) : 0.0);
 
 	temp = (12/(1+(save_data.enhancing_level>sim_data.item_level ? ((effective_level+save_data.observatory_level-sim_data.item_level)+item_bonus+tea_speed_bonus)/100 : (save_data.observatory_level+item_bonus+tea_speed_bonus)/100))).toFixed(2)
@@ -944,6 +955,8 @@ function init_user_data() {
     if(save_data.tea_super_enhancing == undefined) save_data.tea_super_enhancing = false;
     if(save_data.tea_ultra_enhancing == undefined) save_data.tea_ultra_enhancing = false;
     if(save_data.achievement_champion == undefined) save_data.achievement_champion = false;
+    if(save_data.scroll_wisdom == undefined) save_data.scroll_wisdom = false;
+    if(save_data.scroll_speed == undefined) save_data.scroll_speed = false;
     if(save_data.observatory_level == undefined && save_data.laboratory_level != undefined) save_data.observatory_level = save_data.laboratory_level;
     if(save_data.hide_junk == undefined) save_data.hide_junk = false;
     if(save_data.hide_charms == undefined) save_data.hide_charms = false;
@@ -992,6 +1005,8 @@ function init_user_data() {
     if(save_data.tea_blessed)         { $("#tea_blessed").attr("class", "btn_icon_selected"); }
     if(save_data.tea_wisdom)          { $("#tea_wisdom").attr("class", "btn_icon_selected"); }
     if(save_data.achievement_champion){ $("#achievement_champion").attr("class", "btn_icon_selected"); }
+    if(save_data.scroll_wisdom)		  { $("#scroll_wisdom").attr("class", "btn_icon_selected"); }
+    if(save_data.scroll_speed)		  { $("#scroll_speed").attr("class", "btn_icon_selected"); }   
 
     $("#i_stop_at").val(save_data.stop_at);
 
@@ -1097,7 +1112,6 @@ function achievement_selection(element)
 	if(element.className == "btn_icon")
   {
     element.className = "btn_icon_selected";
-    if(element.id == "achievement_champion") 
     save_data[element.id] = true;
     
 	}
@@ -1110,7 +1124,24 @@ function achievement_selection(element)
   update_values();
   reset_results();
 }
-    
+ 
+function scroll_selection(element)
+{
+  if(element.className == "btn_icon")
+  {
+    element.className = "btn_icon_selected";
+    save_data[element.id] = true;
+  }
+  else
+  {
+    element.className = "btn_icon";
+    save_data[element.id] = false;
+  }
+
+  update_values();
+  reset_results();
+}
+ 
 function protect_selection(element)
 {
   const index = Number(element.id.substring(5, 6));
@@ -1138,7 +1169,7 @@ $(document).ready(function() {
   request.send(null);
   game_data = JSON.parse(request.responseText);
 
-	//generte items list
+	//generate items list
   enhancable_items = Object.entries(game_data.itemDetailMap).reduce((acc, cur) => {
     if(cur[1].enhancementCosts != null) { acc.push(cur[1]); }
     return acc;
