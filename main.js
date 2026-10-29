@@ -320,7 +320,7 @@ function update_values(recalculate = true) {
       result = enhancable_items.find((a) => a.hrid == item_hrid).equipmentDetail.noncombatStats.enhancingSpeed * 100 * (((enhance_bonus[level]-1)*5)+1);
     else    
       result = enhancable_items.find((a) => a.hrid == item_hrid).equipmentDetail.noncombatStats.enhancingSpeed * 100 * enhance_bonus[level];
-    return Number(result.toFixed(2)); // increase decimals for more accuracy?
+    return Number(result.toFixed(5)); // increase decimals for more accuracy?
   };
   item_bonus = (save_data.use_enchanted ? calc_speed("/items/enchanted_gloves", save_data.enchanted_level) : 0.0) + 
                (save_data.use_enhancer_top ? calc_speed("/items/enhancers_top", save_data.enhancer_top_level) : 0.0) +
@@ -966,8 +966,8 @@ function init_user_data() {
     $("#i_use_enhancer_bot").prop("checked", save_data.use_enhancer_bot);
     $("#i_use_philo_neck").prop("checked", save_data.use_philo_neck);
     $("#i_use_chance_cape").prop("checked", save_data.use_chance_cape);
-    $("#i_use_shrine_tempo").prop("checked", save_data.use_shrine_tempo_buff);
-    $("#i_use_shrine_scholar").prop("checked", save_data.use_shrine_scholar_buff);
+    $("#i_use_shrine_tempo_buff").prop("checked", save_data.use_shrine_tempo_buff);
+    $("#i_use_shrine_scholar_buff").prop("checked", save_data.use_shrine_scholar_buff);
     $("#i_use_enhancing_buff").prop("checked", save_data.use_enhancing_buff);
     $("#i_use_experience_buff").prop("checked", save_data.use_experience_buff);
     $("#i_use_charm").prop("checked", save_data.use_charm);
